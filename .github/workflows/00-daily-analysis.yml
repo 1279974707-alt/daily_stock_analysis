@@ -1,8 +1,9 @@
 name: 每日股票分析
 
 on:
-  # 定时触发 - 每天北京时间 18:00 (UTC 10:00)
+  # 定时触发 - 北京时间 11:35 午盘、18:00 收盘
   schedule:
+    - cron: '35 3 * * 1-5'     # 周一到周五，UTC 03:35 = 北京时间 11:35
     - cron: '0 10 * * 1-5'     # 周一到周五，UTC 10:00 = 北京时间 18:00
   
   # 手动触发
@@ -471,8 +472,12 @@ jobs:
             echo "✅ LITELLM 配置文件已写入: $LITELLM_CONFIG"
           fi
 
-          # 判断运行模式
-          MODE="${{ github.event.inputs.mode || 'full' }}"
+          # 午盘定时任务仅分析股票；收盘定时任务保持完整分析
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "35 3 * * 1-5" ]; then
+            MODE="stocks-only"
+          else
+            MODE="${{ github.event.inputs.mode || 'full' }}"
+          fi
           
           echo "=========================================="
           echo "🚀 A股自选股智能分析系统"
